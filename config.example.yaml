@@ -1,0 +1,15 @@
+# config.yaml
+
+# PDF files to be loaded (downloaded via file_id if needed)
+pdfs:
+  - file_id: "your-google-drive-file-id"
+    filename: "manual.pdf"
+
+# Google Sheets to be loaded (CSV export links)
+sheets:
+  - url: "https://docs.google.com/spreadsheets/d/your-sheet-id/export?format=csv&gid=0"
+
+# Google Docs to be loaded as plain text
+docs:
+  - file_id: "your-google-doc-id"
+    filename: "call_center_guide.txt"
