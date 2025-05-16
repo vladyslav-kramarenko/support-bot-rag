@@ -2,6 +2,7 @@ import os
 import time
 import html
 import logging
+import yaml
 from dotenv import load_dotenv
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, ContextTypes
@@ -23,7 +24,11 @@ httpx_logger.addFilter(HttpxFilter())
 # === Load config ===
 load_dotenv()
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
-SHOW_TECH_INFO = os.getenv("TECHNICAL_INFO", "false").lower() == "true"
+
+# === Load YAML Config ===
+with open("config.yaml", "r") as f:
+    config = yaml.safe_load(f)
+SHOW_TECH_INFO = config.get("technical_info", False)
 
 if not TELEGRAM_TOKEN:
     raise ValueError("❌ TELEGRAM_TOKEN is missing from .env file")

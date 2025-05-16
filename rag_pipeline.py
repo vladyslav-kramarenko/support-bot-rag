@@ -1,18 +1,15 @@
 import os
 import yaml
 import logging
-import time
 from dotenv import load_dotenv
 
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.prompts import PromptTemplate
 from langchain.chains import RetrievalQA
-# from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
-from langchain_community.llms import LlamaCpp
 
-from llm_loader import get_llm
+from llm_loader import get_llm, get_model_config
 from loaders.load_all_documents import load_all_documents
 
 # === Init ===
@@ -27,9 +24,14 @@ class MetalSpamFilter(logging.Filter):
 
 logging.getLogger().addFilter(MetalSpamFilter())
 
-DATA_DIR = os.getenv("DATA_DIR", "data")
-TECHNICAL_INFO = os.getenv("TECHNICAL_INFO", "false").lower() == "true"
+# === Load YAML Config ===
+with open("config.yaml", "r") as f:
+    config = yaml.safe_load(f)
 
+DATA_DIR = config.get("data_dir", "data")
+TECHNICAL_INFO = str(config.get("technical_info", False)).lower() == "true"
+
+# === Prompt ===
 QA_PROMPT = PromptTemplate.from_template(
 """
 You are a support assistant answering client questions using internal documentation and instructions.
@@ -46,13 +48,8 @@ Answer:
 """
 )
 
-# === Load config YAML ===
-with open("config.yaml", "r") as f:
-    config = yaml.safe_load(f)
-
 # === Chunking & Indexing ===
-def build_vectorstore(docs_pdf, docs_sheet, docs_guide, embedding_model):
-    # splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=30)
+def build_vectorstore(docs_pdf, docs_sheet, docs_guide, embedding_model_name):
     splitter = RecursiveCharacterTextSplitter(chunk_size=400, chunk_overlap=50)
     chunks_pdf = splitter.split_documents(docs_pdf)
     chunks_guide = splitter.split_documents(docs_guide)
@@ -61,16 +58,19 @@ def build_vectorstore(docs_pdf, docs_sheet, docs_guide, embedding_model):
     if not chunks:
         raise RuntimeError("❌ No documents found. Please check config.yaml and ensure data is available.")
 
-    embedding = HuggingFaceEmbeddings(model_name=embedding_model)
+    embedding = HuggingFaceEmbeddings(model_name=embedding_model_name)
     return FAISS.from_documents(chunks, embedding)
 
 # === Chain Construction ===
 def build_qa_chain(llm, vectorstore, tech_info: bool):
+    model_config = get_model_config()
+    retrieval_cfg = model_config.get("retrieval_strategy", {})
+
     return RetrievalQA.from_chain_type(
         llm=llm,
         retriever=vectorstore.as_retriever(
-            search_type="mmr",  # diversity-aware, reduces duplicate info
-            search_kwargs={"k": 2}
+            search_type=retrieval_cfg.get("search_type", "mmr"),
+            search_kwargs={"k": retrieval_cfg.get("search_k", 2)}
         ),
         return_source_documents=tech_info,
         chain_type="stuff",
@@ -84,8 +84,14 @@ def build_qa():
     if not (docs_pdf or docs_sheet or docs_guide):
         raise RuntimeError("❌ No documents found. Check config.yaml.")
 
-    embedding_model = os.getenv("EMBEDDING_MODEL_NAME", "BAAI/bge-small-en-v1.5")
-    vectorstore = build_vectorstore(docs_pdf, docs_sheet, docs_guide, embedding_model)
+    embedding_profiles = config.get("embedding_profiles", {})
+    active_embedding = config.get("embedding_profile", "bge-small")
+
+    if active_embedding not in embedding_profiles:
+        raise ValueError(f"❌ Embedding profile '{active_embedding}' not found in config.yaml")
+
+    embedding_model_name = embedding_profiles[active_embedding]["model_name"]
+    vectorstore = build_vectorstore(docs_pdf, docs_sheet, docs_guide, embedding_model_name)
 
     llm = get_llm()
     return build_qa_chain(llm, vectorstore, tech_info=TECHNICAL_INFO)

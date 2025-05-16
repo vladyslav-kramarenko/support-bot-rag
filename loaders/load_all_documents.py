@@ -1,13 +1,20 @@
 import os
 import logging
+import yaml
 from langchain_community.document_loaders import PyPDFLoader, TextLoader
-from loaders.pdf_loader import download_file_from_drive
+from loaders.gdrive_file_loader import download_file_from_drive
 from loaders.gsheet_loader import load_google_sheet
 from loaders.gdoc_loader import download_google_doc
+# from loaders.pdf_image_loader import load_pdf_with_images
+from loaders.pdf_ocr_loader import load_pdf_with_images
 
 logger = logging.getLogger(__name__)
 
-DATA_DIR = os.getenv("DATA_DIR", "data")
+# === Load YAML Config ===
+with open("config.yaml", "r") as f:
+    config = yaml.safe_load(f)
+
+DATA_DIR = config.get("data_dir", "data")
 
 def load_pdfs(pdfs_config: list) -> list:
     """Load PDF documents from Google Drive."""
@@ -17,9 +24,22 @@ def load_pdfs(pdfs_config: list) -> list:
             download_file_from_drive(item["file_id"], item["filename"])
             path = os.path.join(DATA_DIR, item["filename"])
             docs.extend(PyPDFLoader(path).load())
+            # docs.extend(load_pdf_with_images(path))
         except Exception as e:
             logger.warning("❌ Failed to load PDF %s: %s", item.get("filename"), e)
     return docs
+
+# def load_pdfs(pdfs_config: list) -> list:
+#     """Load PDF documents with text and image-based OCR content from Google Drive."""
+#     docs = []
+#     for item in pdfs_config:
+#         try:
+#             download_file_from_drive(item["file_id"], item["filename"])
+#             path = os.path.join(DATA_DIR, item["filename"])
+#             docs.extend(load_pdf_with_images(path))  # Use OCR-enabled loader
+#         except Exception as e:
+#             logger.warning("❌ Failed to load PDF %s: %s", item.get("filename"), e)
+#     return docs
 
 def load_sheets(sheets_config: list) -> list:
     """Load documents from Google Sheets."""
@@ -47,7 +67,8 @@ def load_all_documents(config: dict) -> tuple[list, list, list]:
     Wrapper that loads all document types (PDF, Sheets, Docs) from a config dict.
     Returns: tuple (pdf_docs, sheet_docs, guide_docs)
     """
-    pdf_docs = load_pdfs(config.get("pdfs", []))
-    sheet_docs = load_sheets(config.get("sheets", []))
-    guide_docs = load_docs(config.get("docs", []))
+    data_sources = config.get("data_sources", {})
+    pdf_docs = load_pdfs(data_sources.get("pdfs", []))
+    sheet_docs = load_sheets(data_sources.get("sheets", []))
+    guide_docs = load_docs(data_sources.get("docs", []))
     return pdf_docs, sheet_docs, guide_docs

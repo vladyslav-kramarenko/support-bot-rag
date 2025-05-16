@@ -1,15 +1,192 @@
 # config.yaml
+data_sources:
+  # PDF files to be loaded (downloaded via file_id if needed)
+  pdfs:
+    - file_id: "your-google-drive-file-id"
+      filename: "manual.pdf"
 
-# PDF files to be loaded (downloaded via file_id if needed)
-pdfs:
-  - file_id: "your-google-drive-file-id"
-    filename: "manual.pdf"
+  # Google Sheets to be loaded (CSV export links)
+  sheets:
+    - url: "https://docs.google.com/spreadsheets/d/your-sheet-id/export?format=csv&gid=0"
 
-# Google Sheets to be loaded (CSV export links)
-sheets:
-  - url: "https://docs.google.com/spreadsheets/d/your-sheet-id/export?format=csv&gid=0"
+  # Google Docs to be loaded as plain text
+  docs:
+    - file_id: "your-google-doc-id"
+      filename: "call_center_guide.txt"
 
-# Google Docs to be loaded as plain text
-docs:
-  - file_id: "your-google-doc-id"
-    filename: "call_center_guide.txt"
+technical_info: true
+data_dir: data/
+
+# === Default embedding model profile ===
+embedding_profile: bge-small
+
+# === Embedding model configurations ===
+embedding_profiles:
+  bge-small:
+    model_name: BAAI/bge-small-en-v1.5
+
+  gte-small:
+    model_name: thenlper/gte-small
+
+  e5-small:
+    model_name: intfloat/e5-small-v2
+
+  miniLM:
+    model_name: sentence-transformers/all-MiniLM-L6-v2
+
+model_profile: mistral-7b-q4
+
+model_profiles:
+  deepseek-coder-1.3b-q4:
+    path: models/deepseek-coder-1.3b-instruct.Q4_K_M.gguf
+    temperature: 0.1
+    max_tokens: 512
+    n_ctx: 4096
+    n_batch: 32
+    n_threads: 8
+    top_k: 40
+    top_p: 0.9
+    repeat_penalty: 1.15
+    repeat_last_n: 64
+    search_type: mmr
+    search_k: 2
+
+  deepseek-coder-1.3b-q5:
+    path: models/deepseek-coder-1.3b-instruct.Q5_K_M.gguf
+    temperature: 0.1
+    max_tokens: 512
+    n_ctx: 4096
+    n_batch: 32
+    n_threads: 8
+    top_k: 40
+    top_p: 0.9
+    repeat_penalty: 1.15
+    repeat_last_n: 64
+    search_type: mmr
+    search_k: 2
+
+  deepseek-coder-6.7b-q4:
+    path: models/deepseek-coder-6.7b-instruct.Q4_K_M.gguf
+    temperature: 0.1
+    max_tokens: 512
+    n_ctx: 4096
+    n_batch: 32
+    n_threads: 8
+    top_k: 40
+    top_p: 0.9
+    repeat_penalty: 1.15
+    repeat_last_n: 64
+    search_type: mmr
+    search_k: 2
+
+  deepseek-llm-7b-q4:
+    path: models/deepseek-llm-7b-chat.Q4_K_M.gguf
+    temperature: 0.1
+    max_tokens: 512
+    n_ctx: 4096
+    n_batch: 32
+    n_threads: 8
+    top_k: 40
+    top_p: 0.9
+    repeat_penalty: 1.15
+    repeat_last_n: 64
+    search_type: mmr
+    search_k: 2
+
+  deepseek-llm-7b-q5:
+    path: models/deepseek-llm-7b-chat.Q5_K_M.gguf
+    temperature: 0.1
+    max_tokens: 512
+    n_ctx: 4096
+    n_batch: 32
+    n_threads: 8
+    top_k: 40
+    top_p: 0.9
+    repeat_penalty: 1.15
+    repeat_last_n: 64
+    search_type: mmr
+    search_k: 2
+
+  deepseek-llm-7b-q5-s:
+    path: models/deepseek-llm-7b-chat.Q5_K_S.gguf
+    temperature: 0.1
+    max_tokens: 512
+    n_ctx: 4096
+    n_batch: 32
+    n_threads: 8
+    top_k: 40
+    top_p: 0.9
+    repeat_penalty: 1.15
+    repeat_last_n: 64
+    search_type: mmr
+    search_k: 2
+
+  mistral-7b-q3:
+    path: models/mistral-7b-instruct-v0.1.Q3_K_M.gguf
+    temperature: 0.1
+    max_tokens: 512
+    n_ctx: 8192
+    n_batch: 32
+    n_threads: 8
+    top_k: 40
+    top_p: 0.9
+    repeat_penalty: 1.15
+    repeat_last_n: 64
+    search_type: mmr
+    search_k: 2
+
+  mistral-7b-q4:
+    path: models/mistral-7b-instruct-v0.1.Q4_K_M.gguf
+    temperature: 0.1
+    max_tokens: 512
+    n_ctx: 8192
+    n_batch: 32
+    n_threads: 8
+    top_k: 40
+    top_p: 0.9
+    repeat_penalty: 1.15
+    repeat_last_n: 64
+    search_type: mmr
+    search_k: 2
+
+  mistral-7b-q5:
+    path: models/mistral-7b-instruct-v0.1.Q5_K_M.gguf
+    temperature: 0.1
+    max_tokens: 512
+    n_ctx: 8192
+    n_batch: 32
+    n_threads: 8
+    top_k: 40
+    top_p: 0.9
+    repeat_penalty: 1.15
+    repeat_last_n: 64
+    search_type: mmr
+    search_k: 2
+
+  phi-2-q4:
+    path: models/phi-2.Q4_K_M.gguf
+    temperature: 0.1
+    max_tokens: 512
+    n_ctx: 2048
+    n_batch: 16
+    n_threads: 8
+    top_k: 40
+    top_p: 0.9
+    repeat_penalty: 1.15
+    repeat_last_n: 64
+    search_type: similarity
+    search_k: 2
+
+  tinyllama-1.1b-dpo:
+    path: models/tinyllama-1.1b-chat-v1.0-intel-dpo.Q4_K_M.gguf
+    temperature: 0.1
+    max_tokens: 512
+    n_ctx: 2048
+    n_batch: 16
+    n_threads: 8
+    top_k: 40
+    top_p: 0.9
+    repeat_penalty: 1.15
+    repeat_last_n: 64
+    search_type: similarity
+    search_k: 2
