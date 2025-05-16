@@ -5,32 +5,44 @@ import time
 from dotenv import load_dotenv
 
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain.embeddings import HuggingFaceEmbeddings
-from langchain.vectorstores import FAISS
-from langchain.llms import LlamaCpp
 from langchain.prompts import PromptTemplate
 from langchain.chains import RetrievalQA
+# from langchain_community.embeddings import HuggingFaceEmbeddings
+from langchain_huggingface import HuggingFaceEmbeddings
+from langchain_community.vectorstores import FAISS
+from langchain_community.llms import LlamaCpp
 
 from llm_loader import get_llm
-from loaders.load_all_documents import load_all_documents  # <- NEW import
+from loaders.load_all_documents import load_all_documents
 
 # === Init ===
 load_dotenv()
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# 🧹 Suppress Metal spam logs
+class MetalSpamFilter(logging.Filter):
+    def filter(self, record):
+        return "ggml_metal" not in record.getMessage()
+
+logging.getLogger().addFilter(MetalSpamFilter())
+
 DATA_DIR = os.getenv("DATA_DIR", "data")
 TECHNICAL_INFO = os.getenv("TECHNICAL_INFO", "false").lower() == "true"
 
 QA_PROMPT = PromptTemplate.from_template(
-    """Answer using the context below. Be concise.
-If the answer is not in the context, reply:
-"I'm not sure. Please consult your manager."
+"""
+You are a support assistant answering client questions using internal documentation and instructions.
+
+Respond only based on the context below. If the answer is not clearly found in the context, say:
+"I'm not sure. There is not enough data."
+
+Context may include internal guidance in note format. Do not invent details, and do not repeat the question.
 
 Context:
 {context}
----
-{question}
+
+Answer:
 """
 )
 
@@ -40,8 +52,8 @@ with open("config.yaml", "r") as f:
 
 # === Chunking & Indexing ===
 def build_vectorstore(docs_pdf, docs_sheet, docs_guide, embedding_model):
-    splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=30)
-    # splitter = RecursiveCharacterTextSplitter(chunk_size=300, chunk_overlap=50)
+    # splitter = RecursiveCharacterTextSplitter(chunk_size=500, chunk_overlap=30)
+    splitter = RecursiveCharacterTextSplitter(chunk_size=400, chunk_overlap=50)
     chunks_pdf = splitter.split_documents(docs_pdf)
     chunks_guide = splitter.split_documents(docs_guide)
     chunks = [*docs_sheet, *chunks_guide, *chunks_pdf]
