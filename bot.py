@@ -6,10 +6,17 @@ from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, ContextTypes
 from rag_chain import qa_chain
 
+# === Constants ===
+MAX_MESSAGE_LENGTH = 4000
+MAX_CHUNKS_TO_SHOW = 5
+
 # === Load config ===
 load_dotenv()
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
 SHOW_TECH_INFO = os.getenv("TECHNICAL_INFO", "false").lower() == "true"
+
+if not TELEGRAM_TOKEN:
+    raise ValueError("❌ TELEGRAM_TOKEN is missing from .env file")
 
 # === HTML escaping ===
 def escape_html(text: str) -> str:
@@ -28,27 +35,28 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     result = qa_chain.invoke({"query": user_input})
     elapsed = round(time.time() - start_time, 2)
 
-    # Escape final answer body
-    safe_result = escape_html(result['result'])
+    # Escape final answer body safely
+    safe_result = escape_html(result.get("result", "⚠️ No response generated."))
 
     # Prepare technical info if enabled
     technical_info = ""
-    max_chunks_quantity = 5
-
     if SHOW_TECH_INFO:
         source_chunks = result.get("source_documents", [])
         if source_chunks:
-            display_chunks = source_chunks[:max_chunks_quantity]
+            display_chunks = source_chunks[:MAX_CHUNKS_TO_SHOW]
             chunk_blocks = []
             for i, chunk in enumerate(display_chunks):
                 chunk_text = escape_html(chunk.page_content.strip()[:1000])
-                chunk_blocks.append(f"<b>Chunk #{i+1}:</b>\n<pre>{chunk_text}</pre>")
+                chunk_source = escape_html(chunk.metadata.get("source", "unknown"))
+                chunk_blocks.append(
+                    f"<b>Chunk #{i+1}:</b>\n<pre>{chunk_text}</pre>\n<i>Source: {chunk_source}</i>"
+                )
             chunks_text = "\n\n".join(chunk_blocks)
         else:
             chunks_text = "<i>⚠️ No matching source chunks available.</i>"
 
-        technical_info = f"""\
-        <b>────────────────────────────</b>
+        technical_info = f"""
+<b>────────────────────────────</b>
 <b>🛠️ Technical Info</b>
 
 {chunks_text}
@@ -60,9 +68,12 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     final_reply = f"{safe_result}\n\n{technical_info}"
 
     # Truncate if too long
-    MAX_MESSAGE_LENGTH = 4000
     if len(final_reply) > MAX_MESSAGE_LENGTH:
-        final_reply = final_reply[:MAX_MESSAGE_LENGTH - 100] + "\n\n<i>⛔ Message truncated due to size</i>"
+        await update.message.reply_text(
+            escape_html("⚠️ Response too long to display. Please narrow your question."),
+            parse_mode="HTML"
+        )
+        return
 
     await update.message.reply_text(final_reply.strip(), parse_mode="HTML")
 
@@ -71,7 +82,7 @@ def run_bot():
     app = ApplicationBuilder().token(TELEGRAM_TOKEN).build()
     app.add_handler(CommandHandler("start", start))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
-    print("🤖 Bot is running. Ask away on Telegram.")
+    print("✅ Bot initialized. Waiting for messages...")
     app.run_polling()
 
 if __name__ == "__main__":
