@@ -29,9 +29,9 @@ If the answer is not in the context, reply:
 
 Context:
 {context}
-
-Question: {question}
-Answer:"""
+---
+{question}
+"""
 )
 
 # === Load config YAML ===
