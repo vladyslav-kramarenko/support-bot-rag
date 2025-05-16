@@ -1,6 +1,7 @@
 import os
 import time
 import html
+import logging
 from dotenv import load_dotenv
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, ContextTypes
@@ -9,6 +10,15 @@ from rag_pipeline import qa_chain
 # === Constants ===
 MAX_MESSAGE_LENGTH = 4000
 MAX_CHUNKS_TO_SHOW = 5
+
+class HttpxFilter(logging.Filter):
+    def filter(self, record):
+        msg = record.getMessage()
+        return not ("HTTP/1.1 200 OK" in msg and "getUpdates" in msg)
+
+# Apply the filter to httpx logger
+httpx_logger = logging.getLogger("httpx")
+httpx_logger.addFilter(HttpxFilter())
 
 # === Load config ===
 load_dotenv()
