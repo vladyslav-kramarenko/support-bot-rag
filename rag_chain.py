@@ -92,16 +92,20 @@ llm = LlamaCpp(
 # === Custom QA Chain with Prompt ===
 custom_prompt = PromptTemplate.from_template(
     """
-    You are a helpful support assistant for a siding company.
-    Use the following context to answer the question.
-    If the answer is unknown or not clearly stated, say you don't know.
+You are a concise and reliable assistant for a siding company call center team.
 
-    Context:
-    {context}
+Answer questions *only* based on the provided context. Do *not* make up information.  
+If the answer is not found in the context, respond with:  
+"I'm not sure. Please consult your manager or check the internal documentation."
 
-    Question: {question}
-    Helpful Answer:
-    """
+Keep answers short and clear so a support agent can relay them quickly to a client.
+
+Context:
+{context}
+
+Question: {question}
+Helpful Answer:
+"""
 )
 
 combine_chain = load_qa_with_sources_chain(
