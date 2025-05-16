@@ -4,7 +4,7 @@ import html
 from dotenv import load_dotenv
 from telegram import Update
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, filters, ContextTypes
-from rag_chain import qa_chain
+from rag_pipeline import qa_chain
 
 # === Constants ===
 MAX_MESSAGE_LENGTH = 4000
