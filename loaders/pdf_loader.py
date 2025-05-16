@@ -8,9 +8,9 @@ def download_file_from_drive(file_id: str, filename: str, output_dir='data'):
     # Delete old file, if exists
     if os.path.exists(output_path):
         os.remove(output_path)
-        print(f"🗑 Удалён старый файл: {output_path}")
+        print(f"🗑 Old file was deleted: {output_path}")
 
     # Download new file
     url = f"https://drive.google.com/uc?id={file_id}"
     gdown.download(url, output_path, quiet=False)
-    print(f"✅ Загружен новый файл: {output_path}")
+    print(f"✅ New file was downloaded: {output_path}")
